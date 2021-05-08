@@ -80,9 +80,7 @@ class EmojiArtViewController: UIViewController{
 }
 
 
-    
-    
-    
+
     //MARK: Collection View Delegate and DataSource
     extension EmojiArtViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
         func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -93,6 +91,7 @@ class EmojiArtViewController: UIViewController{
         private var font: UIFont {
             return UIFontMetrics(forTextStyle: .body).scaledFont(for: UIFont.preferredFont(forTextStyle: .body).withSize(64))
         }
+        
         func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
            
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "emojiCell", for: indexPath)
@@ -161,6 +160,7 @@ class EmojiArtViewController: UIViewController{
 
 //MARK: CollectionViewDragDelegate
 extension EmojiArtViewController: UICollectionViewDragDelegate {
+    
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
         return dragItems(at: indexPath)
     }
@@ -177,7 +177,7 @@ extension EmojiArtViewController: UICollectionViewDragDelegate {
         if let attributedString = (emojiCollectionView.cellForItem(at: indexPath) as? EmojiCollectionViewCell)?.label.attributedText{
             let dragItem = UIDragItem(itemProvider: NSItemProvider(object: attributedString))
             
-            //Da es innerhalb der App ist, dann Muss man den ganzen async Kack nciht machen
+            //Da es innerhalb der App ist, dann Muss man den ganzen async Kack nicht machen
             dragItem.localObject = attributedString
             return  [dragItem]
         }
@@ -205,7 +205,7 @@ extension EmojiArtViewController: UICollectionViewDropDelegate{
     }
     
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
-        //der coordinator enthält alli informationen
+        //der coordinator enthält alle informationen
         let destinationIndexPath = coordinator.destinationIndexPath ?? IndexPath(item: 0, section: 0)
         
         for item in coordinator.items {
@@ -218,17 +218,20 @@ extension EmojiArtViewController: UICollectionViewDropDelegate{
                     
                     //Wenn mehrere inserts und deletes gemacht werden
                     collectionView.performBatchUpdates {
+                        
+                        //Das Model muss upgedatet werden
                         emojis.remove(at: sourceIndexPath.item)
                         emojis.insert(attributedString.string, at: destinationIndexPath.item)
                         collectionView.deleteItems(at: [sourceIndexPath])
                         collectionView.insertItems(at: [destinationIndexPath])
                     }
+                    
                     coordinator.drop(item.dragItem, toItemAt: destinationIndexPath)
                 }
             }else{
-                
+                //Ich komme nicht aus meinem eigenen Collecction view, also können die Drop daten länger zum LAden brauchen
                 //Da die Daten eine Weile brauchen können, müssen diese async geholten werden. Was macht man solange (kann ja 10 sekunden dauern) --> Man erzeugt einen Placeholder.
-                let placeholderContext = coordinator.drop(item.dragItem, to: UICollectionViewDropPlaceholder(insertionIndexPath: destinationIndexPath, reuseIdentifier: "DropPlaceholderCell")) // Die Zelle muss erzeugt werden
+                let placeholderContext = coordinator.drop(item.dragItem, to: UICollectionViewDropPlaceholder(insertionIndexPath: destinationIndexPath, reuseIdentifier: "DropPlaceholderCell")) // Die Zelle muss erzeugt werden --> Storyboard
                 
                 //loadObject holt die Daten auf einer anderen Queue
                 item.dragItem.itemProvider.loadObject(ofClass: NSAttributedString.self) { provider, error in
@@ -236,7 +239,7 @@ extension EmojiArtViewController: UICollectionViewDropDelegate{
                     DispatchQueue.main.async {
                         
                         placeholderContext.commitInsertion { insertionIndexPath in
-                            //insertionIndexPAth kann anders sein als der DEstination, da die CollectionVie in der Zeit in der die Daten angefragt werden, sich verändern kann.
+                            //insertionIndexPath kann anders sein als der DEstination, da die CollectionVie in der Zeit in der die Daten angefragt werden, sich verändern kann.
                             
                             if let attributedString = provider as? NSAttributedString{
                                 self.emojis.insert(attributedString.string, at: insertionIndexPath.item)
